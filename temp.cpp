@@ -58,8 +58,8 @@ return -1;
 glEnable(GL_DEPTH_TEST);
 
 
-Shader ownShader("./lighting.vs", "./lighting.fs");
-Shader lightShader("./light_cube.vs", "./light_cube.fs");
+Shader lightingShader("./lighting.vs", "./lighting.fs");
+Shader lightCubeShader("./light_cube.vs", "./light_cube.fs");
 
 
 float vertices[] = {
@@ -106,128 +106,102 @@ float vertices[] = {
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
     };
 
+// first, configure the cube's VAO (and VBO)
+    unsigned int VBO, cubeVAO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &VBO);
 
-unsigned int VBO, VAO;
-glGenVertexArrays(1, &VAO);
-glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-glBindVertexArray(VAO);
+    glBindVertexArray(cubeVAO);
 
-glBindBuffer(GL_ARRAY_BUFFER, VBO);
-glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-
-
-// position attribute
-glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-glEnableVertexAttribArray(0);
-
-glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-glEnableVertexAttribArray(1);
-
-unsigned int lightVAO;
-glGenVertexArrays(1, &lightVAO);
-glBindVertexArray(lightVAO);
-glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
-glEnableVertexAttribArray(0);
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
 
-	
+    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
+    unsigned int lightCubeVAO;
+    glGenVertexArrays(1, &lightCubeVAO);
+    glBindVertexArray(lightCubeVAO);
 
-glBindBuffer(GL_ARRAY_BUFFER, 0);
-glBindVertexArray(0);
-//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-
-
-
-
-
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // note that we update the lamp's position attribute's stride to reflect the updated buffer data
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
 
+    // render loop
+    // -----------
+    while (!glfwWindowShouldClose(window))
+    {
+        // per-frame time logic
+        // --------------------
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        // input
+        // -----
+        processInput(window);
+
+        // render
+        // ------
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // be sure to activate shader when setting uniforms/drawing objects
+        lightingShader.use();
+        lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+        lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        lightingShader.setVec3("lightPos", lightPos);
+
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
+
+        // world transformation
+        glm::mat4 model = glm::mat4(1.0f);
+        lightingShader.setMat4("model", model);
+
+        // render the cube
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
+        // also draw the lamp object
+        lightCubeShader.use();
+        lightCubeShader.setMat4("projection", projection);
+        lightCubeShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        lightCubeShader.setMat4("model", model);
+
+        glBindVertexArray(lightCubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
-
-
-
-
-
-
-
-
-
-
-while(!glfwWindowShouldClose(window)){
-
-float currentFrame = static_cast<float>(glfwGetTime());
-deltaTime = currentFrame - lastFrame;
-lastFrame = currentFrame;
-
-processInput(window);
-glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-ownShader.use();
-ownShader.setVec3("objectColor",1.0f, 0.5f, 0.31f);
-ownShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-ownShader.setVec3("lightPos", lightPos);
-
-glm::mat4 projection;
-projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f); 
-
-glm::mat4 view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
-
-
-
-glm::mat4 model = glm::mat4(1.0f);
-//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-
- 
-
-
-
-
-
-
-ownShader.setMat4("model", model);
-ownShader.setMat4("view", view);	
-ownShader.setMat4("projection", projection);
-
-
-glBindVertexArray(VAO);
-glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-model = glm::translate(model, lightPos);
-model = glm::scale(model, glm::vec3(0.2f));
-
-lightShader.use();
-lightShader.setMat4("model", model);
-lightShader.setMat4("view", view);
-lightShader.setMat4("projection", projection);
-
-glBindVertexArray(lightVAO);
-glDrawArrays(GL_TRIANGLES,0, 36);
-
-
-
-glfwSwapBuffers(window);
-glfwPollEvents();
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+        glfwPollEvents();
 }
 
-glDeleteVertexArrays(1, &VAO);
-glDeleteVertexArrays(1, &lightVAO);
-glDeleteBuffers(1, &VBO);
+ glDeleteVertexArrays(1, &cubeVAO);
+    glDeleteVertexArrays(1, &lightCubeVAO);
+    glDeleteBuffers(1, &VBO);
 
-
-glfwTerminate();
-return 0;
+    // glfw: terminate, clearing all previously allocated GLFW resources.
+    // ------------------------------------------------------------------
+    glfwTerminate();
+    return 0;
 }
 
 void processInput(GLFWwindow *window){
