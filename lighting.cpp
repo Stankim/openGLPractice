@@ -171,11 +171,30 @@ processInput(window);
 glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+        
 ownShader.use();
-ownShader.setVec3("objectColor",1.0f, 0.5f, 0.31f);
+ownShader.setVec3("objectColor",0.3f, 0.2f, 0.31f);
 ownShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 ownShader.setVec3("lightPos", lightPos);
+ownShader.setVec3("viewPos", cameraPos);
+ownShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+ownShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+ownShader.setVec3("material.specular", 1.0f, 1.0f, 1.0f);
+ownShader.setFloat("material.shininess", 32.0f);
+glm::vec3 lightColor;
+
+lightColor.x = sin(glfwGetTime() * 2.0f);
+lightColor.y = sin(glfwGetTime() * 0.7f);
+lightColor.z = sin(glfwGetTime() * 1.3f);
+  
+glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); 
+glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); 
+  
+ownShader.setVec3("light.ambient", ambientColor);
+ownShader.setVec3("light.diffuse", diffuseColor);
+ownShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
 glm::mat4 projection;
 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f); 
@@ -185,7 +204,7 @@ glm::mat4 view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
 
 
 glm::mat4 model = glm::mat4(1.0f);
-//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+//glm::mat4 spinning_model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 
  
@@ -202,6 +221,9 @@ ownShader.setMat4("projection", projection);
 
 glBindVertexArray(VAO);
 glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+
 
 
 model = glm::translate(model, lightPos);
