@@ -54,7 +54,7 @@ return -1;
 
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
-Sphere sphere(9);
+Sphere sphere(6);
 
 
 unsigned int VBO, VAO;
@@ -86,7 +86,7 @@ projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_H
 glm::mat4 view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
 
 glm::mat4 model = glm::mat4(1.0f);
-
+model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 sphereShader.use();
 
