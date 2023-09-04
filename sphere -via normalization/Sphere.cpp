@@ -1,6 +1,7 @@
 #include<math.h>
 #include<glm/glm.hpp>
 #include<iostream>
+#include "Triangle.cpp"
 class Sphere{
 	public:
 	int smoothness = 0;
@@ -26,6 +27,7 @@ class Sphere{
 			//vertices starting from top going clockwise
 			if(i%2 == 0)//triangle looks upwards
 			{
+			
 			copyToArray(glm::normalize(glm::vec3(farther_x, nearer_y, farther_z)));
 			copyToArray(glm::normalize(glm::vec3(nearer_x, farther_y, farther_z)));
 			
