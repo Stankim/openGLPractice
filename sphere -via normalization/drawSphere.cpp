@@ -54,7 +54,7 @@ return -1;
 
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
-Sphere sphere(6);
+Sphere sphere(0,glm::vec3(0.1f, 0.5f, 0.8f));
 
 
 unsigned int VBO, VAO;
@@ -66,9 +66,24 @@ glBufferData(GL_ARRAY_BUFFER, sphere.sizeof_vertices, sphere.vertices, GL_STATIC
 
 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
 glEnableVertexAttribArray(0);
+
+
+unsigned int NBO;
+glGenBuffers(1, &NBO);
+glBindBuffer(GL_ARRAY_BUFFER, NBO);
+glBufferData(GL_ARRAY_BUFFER, sphere.sizeof_vertices, sphere.normals, GL_STATIC_DRAW);
+
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+glEnableVertexAttribArray(1);
+
+
+
 glBindBuffer(GL_ARRAY_BUFFER, 0);
 glBindVertexArray(0);
-glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+
+
+//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 while(!glfwWindowShouldClose(window)){
 float currentFrame = static_cast<float>(glfwGetTime());
@@ -93,6 +108,10 @@ sphereShader.use();
 sphereShader.setMat4("model", model);
 sphereShader.setMat4("view", view);	
 sphereShader.setMat4("projection", projection);
+
+sphereShader.setVec3("lightPos", glm::vec3(0.5f, 1.0f, 3.0f));
+sphereShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+sphereShader.setVec3("sphereColor", sphere.color);
 
 glBindVertexArray(VAO);
 glDrawArrays(GL_TRIANGLES, 0, sphere.number_of_vertices);
