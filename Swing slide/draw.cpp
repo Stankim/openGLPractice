@@ -131,15 +131,17 @@ glDrawArrays(GL_TRIANGLES, 0, 36);
 glm::mat4 swingModel = glm::mat4(1.0f);
 
 
-swingModel = glm::translate(swingModel, glm::vec3(0.0f, 0.74f , 0.0f));
 
-glm::vec3 center_of_rotation = glm::vec3(0.0f, -1.0f, 0.0f);
 
-swingModel = glm::translate(swingModel , glm::vec3(-1*center_of_rotation.x, -1*center_of_rotation.y, -1*center_of_rotation.z ));
-swingModel = glm::rotate(swingModel, (float)sin(glfwGetTime()) *glm::radians(60.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+glm::vec3 center_of_rotation = glm::vec3(0.0f, 1.0f, 0.0f);
+
 swingModel = translate(swingModel, center_of_rotation);
 
+swingModel = glm::rotate(swingModel, (float)sin(glfwGetTime()) *glm::radians(50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
+swingModel = glm::translate(swingModel , glm::vec3(-1*center_of_rotation.x, -1*center_of_rotation.y, -1*center_of_rotation.z ));
+
+swingModel = glm::translate(swingModel, glm::vec3(0.0f, 0.74f , 0.0f));
 
 swingModel = glm::rotate(swingModel, -1*(float)sin(glfwGetTime()) * glm::radians(720.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
