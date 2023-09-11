@@ -55,9 +55,10 @@ glEnable(GL_DEPTH_TEST);
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
 unsigned int VBO, VAO;
+int i=-1;
 while(!glfwWindowShouldClose(window)){
-
-Sphere sphere(5 ,glm::vec3(0.1f, 0.45f, 0.7f), glfwGetTime());;
+i++;
+Sphere sphere(5 ,glm::vec3(0.1f, 0.45f, 0.7f), 1.0 - (1.0/glfwGetTime()));;
 
 
 

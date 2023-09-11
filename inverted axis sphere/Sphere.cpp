@@ -13,11 +13,9 @@ class Sphere{
 		this->number_of_vertices = 8*9*pow(4, smoothness);
 		this->sizeof_vertices = this->number_of_vertices * 4;
 		unsigned int largest_n = pow(2, smoothness);
-		unsigned int half_largest_n = largest_n/2;
 		for(int n=0;n<largest_n;n++){
 			for(int i=0;i<(2*n +1);i++){
 			float nearer_x = (float)(largest_n - (i/2)-1)/(float)largest_n;
-			
 			float farther_x = (float)(largest_n - (i/2))/(float) largest_n;
 			float nearer_y = (float)n/(float)largest_n;
 			float farther_y = (float)(n+1)/(float)largest_n;

@@ -17,14 +17,15 @@ class Sphere{
 		this->color = color;
 		this->smoothness = smoothness;
 		unsigned int largest_n = pow(2, smoothness);
+		float unbreakage = 1 - breakage;
 		for(int n=0;n<largest_n;n++){
 			for(int i=0;i<(2*n +1);i++){
-			float nearer_x = (((1.0-breakage)*(float)((i/2)+1))+(breakage*(float)(largest_n - (i/2)-1)))/(float)largest_n;
-			float farther_x = (float)((i/2))/(float) largest_n;
-			float nearer_y = (float)(largest_n-n)/(float)largest_n;
-			float farther_y = (float)(largest_n-n-1)/(float)largest_n;
-			float nearer_z = (float)(((2*n-i)/2)+1)/(float)largest_n;
-			float farther_z = (float)(((2*n-i)/2))/(float)largest_n;
+			float nearer_x = ((unbreakage*(float)((i/2)+1))+(breakage*(float)(largest_n - (i/2)-1)))/(float)largest_n;
+			float farther_x = ((unbreakage*(float)((i/2)))+(breakage*(float)(largest_n - (i/2))))/(float) largest_n;
+			float nearer_y = ((unbreakage*(float)(largest_n-n))+(breakage*(float)(n+1)))/(float)largest_n;
+			float farther_y = ((unbreakage*(float)(largest_n-n-1))+(breakage*(float)(n+1)))/(float)largest_n;
+			float nearer_z = ((unbreakage*(float)(((2*n-i)/2)+1))+(breakage*(float)(largest_n -((2*n-i)/2)-1)))/(float)largest_n;
+			float farther_z = ((unbreakage*(float)(((2*n-i)/2)))+(breakage*(float)(largest_n-((2*n-i)/2))))/(float)largest_n;
 			
 			//vertices starting from top going clockwise		
 
