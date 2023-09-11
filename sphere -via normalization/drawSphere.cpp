@@ -3,14 +3,15 @@
 #include<iostream>
 #include "Sphere.cpp"
 #include "./../shaders.cpp"
+#include <stdio.h>
 
 void framebuffer_size_callback(GLFWwindow *window, int width,int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 float fov=45.0f;
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 700;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -52,16 +53,21 @@ return -1;
 }
 glEnable(GL_DEPTH_TEST);
 
+int rec_width= 1280;
+int rec_height = 720;
+// start ffmpeg telling it to expect raw rgba 720p-60hz frames
+// -i - tells it to read frames from stdin
+const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+// open pipe to ffmpeg's stdin in binary write mode
+FILE* ffmpeg = popen(cmd, "w");
+int* buffer = new int[rec_width*rec_height];
+
+
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
 unsigned int VBO, VAO;
-int i=-1;
 while(!glfwWindowShouldClose(window)){
-i++;
-Sphere sphere(5 ,glm::vec3(0.1f, 0.45f, 0.7f), 1.0 - (1.0/glfwGetTime()));;
-
-
-
+Sphere sphere(5 ,glm::vec3(0.1f, 0.45f, 0.7f), sin(glfwGetTime()));;
 
 
 glGenVertexArrays(1, &VAO);
@@ -118,7 +124,14 @@ glBindVertexArray(VAO);
 glDrawArrays(GL_TRIANGLES, 0, sphere.vertices.size());
 glfwSwapBuffers(window);
 glfwPollEvents();
+
+
+glReadPixels(0, 0, rec_width, rec_height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+fwrite(buffer, sizeof(int)*rec_width*rec_height, 1, ffmpeg);
+
 }
+
+pclose(ffmpeg);
 
 glDeleteVertexArrays(1, &VAO);
 glDeleteBuffers(1, &VBO);
