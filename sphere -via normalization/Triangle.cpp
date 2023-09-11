@@ -1,4 +1,8 @@
 #include<glm/glm.hpp>
+
+
+
+
 class Triangle{
 	glm::vec3 vertex1;
 	glm::vec3 vertex2;

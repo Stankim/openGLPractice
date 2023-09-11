@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "shaders.cpp"
-#include "rel_img_loader.cpp"
+#include "./../shaders.cpp"
+#include "./../rel_img_loader.cpp"
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -176,7 +176,6 @@ lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
         
 ownShader.use();
 ownShader.setVec3("objectColor",0.3f, 0.2f, 0.31f);
-ownShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 ownShader.setVec3("lightPos", lightPos);
 ownShader.setVec3("viewPos", cameraPos);
 ownShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
@@ -204,17 +203,13 @@ glm::mat4 view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
 
 
 glm::mat4 model = glm::mat4(1.0f);
-//glm::mat4 spinning_model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+glm::mat4 spinning_model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 
  
 
 
-
-
-
-
-ownShader.setMat4("model", model);
+ownShader.setMat4("model", spinning_model);
 ownShader.setMat4("view", view);	
 ownShader.setMat4("projection", projection);
 
@@ -233,6 +228,7 @@ lightShader.use();
 lightShader.setMat4("model", model);
 lightShader.setMat4("view", view);
 lightShader.setMat4("projection", projection);
+lightShader.setVec3("lightColor", lightColor);
 
 glBindVertexArray(lightVAO);
 glDrawArrays(GL_TRIANGLES,0, 36);

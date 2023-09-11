@@ -50,30 +50,30 @@ if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 std::cout << "Failed to initialize GLAD" << std::endl;
 return -1;
 }
-//glEnable(GL_DEPTH_TEST);
+glEnable(GL_DEPTH_TEST);
 
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
-Sphere sphere(0,glm::vec3(0.1f, 0.5f, 0.8f));
-
-
 unsigned int VBO, VAO;
+while(!glfwWindowShouldClose(window)){
+
+Sphere sphere(5 ,glm::vec3(0.1f, 0.45f, 0.7f), glfwGetTime());;
+
+
+
+
+
 glGenVertexArrays(1, &VAO);
 glGenBuffers(1, &VBO);
 glBindVertexArray(VAO);
 glBindBuffer(GL_ARRAY_BUFFER, VBO);
-glBufferData(GL_ARRAY_BUFFER, sphere.sizeof_vertices, sphere.vertices, GL_STATIC_DRAW);
+glBufferData(GL_ARRAY_BUFFER, sphere.vertices.size() * sizeof(Vertex), &sphere.vertices[0], GL_STATIC_DRAW);
 
-glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
 glEnableVertexAttribArray(0);
 
 
-unsigned int NBO;
-glGenBuffers(1, &NBO);
-glBindBuffer(GL_ARRAY_BUFFER, NBO);
-glBufferData(GL_ARRAY_BUFFER, sphere.sizeof_vertices, sphere.normals, GL_STATIC_DRAW);
-
-glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 glEnableVertexAttribArray(1);
 
 
@@ -85,7 +85,7 @@ glBindVertexArray(0);
 
 //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-while(!glfwWindowShouldClose(window)){
+
 float currentFrame = static_cast<float>(glfwGetTime());
 deltaTime = currentFrame - lastFrame;
 lastFrame = currentFrame;
@@ -93,7 +93,7 @@ lastFrame = currentFrame;
 
 processInput(window);
 glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-glClear(GL_COLOR_BUFFER_BIT);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 glm::mat4 projection;
 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f); 
@@ -109,12 +109,12 @@ sphereShader.setMat4("model", model);
 sphereShader.setMat4("view", view);	
 sphereShader.setMat4("projection", projection);
 
-sphereShader.setVec3("lightPos", glm::vec3(0.5f, 1.0f, 3.0f));
+sphereShader.setVec3("lightPos", glm::vec3(1.0f, 3.0f, 2.0f));
 sphereShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 sphereShader.setVec3("sphereColor", sphere.color);
 
 glBindVertexArray(VAO);
-glDrawArrays(GL_TRIANGLES, 0, sphere.number_of_vertices);
+glDrawArrays(GL_TRIANGLES, 0, sphere.vertices.size());
 glfwSwapBuffers(window);
 glfwPollEvents();
 }
