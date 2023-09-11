@@ -5,15 +5,13 @@
 #include "./../shaders.cpp"
 #include <stdio.h>
 
-void framebuffer_size_callback(GLFWwindow *window, int width,int height);
-void processInput(GLFWwindow *window);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-float fov=45.0f;
-const unsigned int SCR_WIDTH = 1280;
+float field_of_view=45.0f;
+const unsigned int SCR_WIDTH = 1000;
 const unsigned int SCR_HEIGHT = 720;
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+const bool record = false;
+
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -22,6 +20,24 @@ float lastFrame = 0.0f;
 float yaw=-90.0f, pitch;
 bool firstMouse = true;
 float lastX = SCR_WIDTH / 2.0f , lastY= SCR_HEIGHT / 2.0f;
+
+const unsigned int sphere_smoothness = 5;
+glm::vec3 sphere_color = glm::vec3(0.1f, 0.45f, 0.7f);
+glm::vec3 lightPos = glm::vec3(1.0f, 3.0f, 2.0f);
+glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+double clearColorRed = 0.3f;
+double clearColorGreen = 0.3f;
+double clearColorBlue = 0.3f;
+double clearColorGamma = 1.0f;
+
+float speed_of_rotation = 0.7; 
+
+void framebuffer_size_callback(GLFWwindow *window, int width,int height);
+void processInput(GLFWwindow *window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
 
 int main()
 {
@@ -53,21 +69,20 @@ return -1;
 }
 glEnable(GL_DEPTH_TEST);
 
-int rec_width= 1280;
-int rec_height = 720;
+
 // start ffmpeg telling it to expect raw rgba 720p-60hz frames
 // -i - tells it to read frames from stdin
 const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
 // open pipe to ffmpeg's stdin in binary write mode
-FILE* ffmpeg = popen(cmd, "w");
-int* buffer = new int[rec_width*rec_height];
+FILE* ffmpeg = record? popen(cmd, "w"):NULL;
+int* buffer = new int[SCR_WIDTH*SCR_HEIGHT];
 
 
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
 unsigned int VBO, VAO;
 while(!glfwWindowShouldClose(window)){
-Sphere sphere(5 ,glm::vec3(0.1f, 0.45f, 0.7f), sin(glfwGetTime()));;
+Sphere sphere(sphere_smoothness,sphere_color, -1, 1);;
 
 
 glGenVertexArrays(1, &VAO);
@@ -99,16 +114,16 @@ lastFrame = currentFrame;
 
 
 processInput(window);
-glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+glClearColor(clearColorRed, clearColorGreen, clearColorBlue, clearColorGamma);
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 glm::mat4 projection;
-projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f); 
+projection = glm::perspective(glm::radians(field_of_view), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f); 
 
-glm::mat4 view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
+glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition+cameraFront, cameraUp);
 
 glm::mat4 model = glm::mat4(1.0f);
-model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+model = glm::rotate(model, speed_of_rotation *(float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 sphereShader.use();
 
@@ -116,8 +131,8 @@ sphereShader.setMat4("model", model);
 sphereShader.setMat4("view", view);	
 sphereShader.setMat4("projection", projection);
 
-sphereShader.setVec3("lightPos", glm::vec3(1.0f, 3.0f, 2.0f));
-sphereShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+sphereShader.setVec3("lightPos", lightPos);
+sphereShader.setVec3("lightColor", lightColor);
 sphereShader.setVec3("sphereColor", sphere.color);
 
 glBindVertexArray(VAO);
@@ -125,10 +140,10 @@ glDrawArrays(GL_TRIANGLES, 0, sphere.vertices.size());
 glfwSwapBuffers(window);
 glfwPollEvents();
 
-
-glReadPixels(0, 0, rec_width, rec_height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-fwrite(buffer, sizeof(int)*rec_width*rec_height, 1, ffmpeg);
-
+if(record){
+    glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    fwrite(buffer, sizeof(int)*SCR_WIDTH*SCR_HEIGHT, 1, ffmpeg);
+}
 }
 
 pclose(ffmpeg);
@@ -147,13 +162,13 @@ if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 glfwSetWindowShouldClose(window, true);
 const float cameraSpeed = 2.5f * deltaTime;
 if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-	cameraPos += cameraSpeed * cameraFront;
+	cameraPosition += cameraSpeed * cameraFront;
 if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	cameraPos -= cameraSpeed * cameraFront;
+	cameraPosition -= cameraSpeed * cameraFront;
 if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-	cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-	cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
@@ -196,9 +211,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 } 
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
-fov -= (float) yoffset;
-if(fov<1.0f)
-	fov = 1.0f;
-if(fov > 45.0f)
-	fov = 45.0f;
+field_of_view -= (float) yoffset;
+if(field_of_view<1.0f)
+	field_of_view = 1.0f;
+if(field_of_view > 45.0f)
+	field_of_view = 45.0f;
 }

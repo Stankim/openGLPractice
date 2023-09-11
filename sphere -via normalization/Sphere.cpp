@@ -13,7 +13,7 @@ class Sphere{
 	int smoothness = 0;
 	std::vector<Vertex> vertices;
 
-	Sphere(int smoothness,glm::vec3 color, float breakage){
+	Sphere(int smoothness,glm::vec3 color, float breakage, float bulgence){
 		this->color = color;
 		this->smoothness = smoothness;
 		unsigned int largest_n = pow(2, smoothness);
@@ -36,16 +36,16 @@ class Sphere{
 			
 			if(i%2 == 0)//triangle looks upwards
 			{
-			vertex1.position = glm::normalize(glm::vec3(farther_x, nearer_y, farther_z));
-			vertex2.position = glm::normalize(glm::vec3(nearer_x, farther_y, farther_z));
-			vertex3.position = glm::normalize(glm::vec3(farther_x, farther_y, nearer_z));
+			vertex1.position = normalize_bulging(glm::vec3(farther_x, nearer_y, farther_z), bulgence);
+			vertex2.position = normalize_bulging(glm::vec3(nearer_x, farther_y, farther_z), bulgence);
+			vertex3.position = normalize_bulging(glm::vec3(farther_x, farther_y, nearer_z), bulgence);
 			
 			}
 			else //triangle looks downwards
 			{
-			vertex1.position = glm::normalize(glm::vec3(farther_x, nearer_y, nearer_z));
-			vertex2.position = glm::normalize(glm::vec3(nearer_x, nearer_y, farther_z));
-			vertex3.position = glm::normalize(glm::vec3(nearer_x, farther_y, nearer_z));
+			vertex1.position = normalize_bulging(glm::vec3(farther_x, nearer_y, nearer_z), bulgence);
+			vertex2.position = normalize_bulging(glm::vec3(nearer_x, nearer_y, farther_z), bulgence);
+			vertex3.position = normalize_bulging(glm::vec3(nearer_x, farther_y, nearer_z), bulgence);
 			}
 			glm::vec3 normal = getNormal(vertex1.position, vertex2.position, vertex3.position);
 			vertex1.normal = normal;
@@ -64,6 +64,14 @@ class Sphere{
 		copyToQuadrant(-1, 1, -1);
 		copyToQuadrant(-1, -1, -1);
 		
+	}
+
+	glm::vec3 normalize_bulging(glm::vec3 raw_vec, float bulgence){
+		glm::vec3 vec_x = glm::normalize(raw_vec);
+		vec_x.x = raw_vec.x + (vec_x.x - raw_vec.x)*bulgence;
+		vec_x.y = raw_vec.y + (vec_x.y - raw_vec.y)*bulgence;
+		vec_x.z = raw_vec.z + (vec_x.z - raw_vec.z)*bulgence;
+		return vec_x;
 	}
 	
 	void copyToQuadrant(float x, float y, float z){
