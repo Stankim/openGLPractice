@@ -30,6 +30,7 @@ double clearColorBlue = 0.3f;
 double clearColorGamma = 1.0f;
 
 float speed_of_rotation = 0.2;
+glm::vec3 axis_of_rotation(0.0f, 1.0f, 0.0f);
 
 glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -71,6 +72,12 @@ int main(int argc, char**argv)
              }
         }
     char* audio_file = argv[1];
+    FILE* f = fopen(audio_file, "r");
+    if(f==NULL){
+        printf("File does not exist in this folder.\n");
+        return 0;
+    }
+    fclose(f);
 
 glfwInit();
 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -196,7 +203,7 @@ projection = glm::perspective(glm::radians(field_of_view), (float)SCR_WIDTH / (f
 glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition+cameraFront, cameraUp);
 
 glm::mat4 model = glm::mat4(1.0f);
-model = glm::rotate(model, speed_of_rotation *(float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+model = glm::rotate(model, speed_of_rotation *(float)glfwGetTime(), axis_of_rotation);
 
 sphereShader.use();
 
