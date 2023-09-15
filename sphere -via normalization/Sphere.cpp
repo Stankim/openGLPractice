@@ -87,7 +87,58 @@ class Sphere{
 
 		}
 	}
-	
+	Sphere(int smoothness,glm::vec3 color, float breakage){
+		this->color = color;
+		this->smoothness = smoothness;
+		unsigned int largest_n = pow(2, smoothness);
+		breakage = breakage * 10.0;
+		for(int n=0;n<largest_n;n++){
+			for(int i=0;i<(2*n +1);i++){
+			float nearer_x = (((1.0-breakage)*(float)((i/2)+1))+(breakage*(float)(largest_n - (i/2)-1)))/(float)largest_n;
+			float farther_x = (float)((i/2))/(float) largest_n;
+			float nearer_y = (float)(largest_n-n)/(float)largest_n;
+			float farther_y = (float)(largest_n-n-1)/(float)largest_n;
+			float nearer_z = (float)(((2*n-i)/2)+1)/(float)largest_n;
+			float farther_z = (float)(((2*n-i)/2))/(float)largest_n;
+			
+			//vertices starting from top going clockwise		
+
+			Vertex vertex1;
+			Vertex vertex2;
+			Vertex vertex3;
+			
+			
+			if(i%2 == 0)//triangle looks upwards
+			{
+			vertex1.position = glm::normalize(glm::vec3(farther_x, nearer_y, farther_z));
+			vertex2.position = glm::normalize(glm::vec3(nearer_x, farther_y, farther_z));
+			vertex3.position = glm::normalize(glm::vec3(farther_x, farther_y, nearer_z));
+			
+			}
+			else //triangle looks downwards
+			{
+			vertex1.position = glm::normalize(glm::vec3(farther_x, nearer_y, nearer_z));
+			vertex2.position = glm::normalize(glm::vec3(nearer_x, nearer_y, farther_z));
+			vertex3.position = glm::normalize(glm::vec3(nearer_x, farther_y, nearer_z));
+			}
+			glm::vec3 normal = getNormal(vertex1.position, vertex2.position, vertex3.position);
+			vertex1.normal = normal;
+			vertex2.normal = normal;
+			vertex3.normal = normal;
+			this->vertices.push_back(vertex1);
+			this->vertices.push_back(vertex2);
+			this->vertices.push_back(vertex3);
+			}
+		}
+		copyToQuadrant(-1.0, 1.0, 1.0);
+		copyToQuadrant(1.0, -1, 1);
+		copyToQuadrant(1, 1, -1);
+		copyToQuadrant(-1, -1, 1);
+		copyToQuadrant(1, -1, -1);
+		copyToQuadrant(-1, 1, -1);
+		copyToQuadrant(-1, -1, -1);
+		
+	}
 	
 	
 	glm::vec3 getNormal(glm::vec3 vertex1, glm::vec3 vertex2, glm::vec3 vertex3){

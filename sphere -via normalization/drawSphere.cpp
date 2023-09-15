@@ -4,24 +4,22 @@
 #include "Sphere.cpp"
 #include "./../shaders.cpp"
 #include <stdio.h>
-
-float field_of_view=45.0f;
-const unsigned int SCR_WIDTH = 1000;
+#include "audio_reader.cpp"
+#include <vector>
+using namespace std;
+const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
-const bool record = false;
+bool record = true;
 
-glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+int framerate = 60;
 
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-float yaw=-90.0f, pitch;
-bool firstMouse = true;
-float lastX = SCR_WIDTH / 2.0f , lastY= SCR_HEIGHT / 2.0f;
+bool controls = true;
 
-const unsigned int sphere_smoothness = 5;
+int sphere_type = 1;
+
+const unsigned int sphere_smoothness = 3;
+
 glm::vec3 sphere_color = glm::vec3(0.1f, 0.45f, 0.7f);
 glm::vec3 lightPos = glm::vec3(1.0f, 3.0f, 2.0f);
 glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -31,7 +29,21 @@ double clearColorGreen = 0.3f;
 double clearColorBlue = 0.3f;
 double clearColorGamma = 1.0f;
 
-float speed_of_rotation = 0.7; 
+float speed_of_rotation = 0.2;
+
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+float field_of_view = 45.0f;
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+float yaw=-90.0f, pitch;
+bool firstMouse = true;
+float lastX = SCR_WIDTH / 2.0f , lastY= SCR_HEIGHT / 2.0f;
+
+
 
 void framebuffer_size_callback(GLFWwindow *window, int width,int height);
 void processInput(GLFWwindow *window);
@@ -39,8 +51,27 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 
-int main()
+
+int main(int argc, char**argv)
 {
+
+    if(argc==1){
+            printf("Error: The input provided is not adequate. Provide a wav file atleast.\n");
+            return 0;
+    }
+    if(argc >= 2){
+            int length = strlen(argv[1]);
+            if(!(argv[1][length-4] == '.' 
+                && argv[1][length-3] == 'w'
+                && argv[1][length-2] == 'a'
+                && argv[1][length-1] == 'v'))
+            {
+                printf("The second argument is not a .wav file.\n");
+                return 0;
+             }
+        }
+    char* audio_file = argv[1];
+
 glfwInit();
 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -55,11 +86,12 @@ return -1;
 }
 glfwMakeContextCurrent(window);
 glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-glfwSetCursorPosCallback(window, mouse_callback);
 
-glfwSetScrollCallback(window, scroll_callback);
-
+if(controls){
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+}
 
 
 if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -72,17 +104,58 @@ glEnable(GL_DEPTH_TEST);
 
 // start ffmpeg telling it to expect raw rgba 720p-60hz frames
 // -i - tells it to read frames from stdin
-const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 1280x720 -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+string cmd = "ffmpeg -r " 
++ to_string(framerate) 
++ " -f rawvideo -pix_fmt rgba -s " 
++ to_string(SCR_WIDTH) + "x" 
++ to_string(SCR_HEIGHT) 
++ " -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+
+
 // open pipe to ffmpeg's stdin in binary write mode
-FILE* ffmpeg = record? popen(cmd, "w"):NULL;
+FILE* ffmpeg = record? popen(cmd.c_str(), "w"):NULL;
 int* buffer = new int[SCR_WIDTH*SCR_HEIGHT];
 
 
 Shader sphereShader = Shader("sphere.vs", "sphere.fs");
 
+AudioReader audio_reader = AudioReader(audio_file);
+
+int audio_to_video_sample_step = audio_reader.sampleRateForAllChannels/ 60;
+
 unsigned int VBO, VAO;
-while(!glfwWindowShouldClose(window)){
-Sphere sphere(sphere_smoothness,sphere_color, -1, 1);;
+for(int audio_index=0;!glfwWindowShouldClose(window) && audio_index<audio_reader.framecount;audio_index+=audio_to_video_sample_step){
+
+float audio_state = (float)audio_reader.data[audio_index];
+audio_state = 1 - (audio_state/32768);
+        
+Sphere sphere = Sphere(sphere_smoothness,sphere_color,audio_state);
+switch(sphere_type){
+    case 1:
+        sphere = Sphere(sphere_smoothness,sphere_color,audio_state);
+    break;
+    case 2:
+        sphere = Sphere(sphere_smoothness,sphere_color, 0 , audio_state);
+        break;
+    case 3:
+        sphere = Sphere(sphere_smoothness,sphere_color, 1 ,audio_state);
+        break;
+    case 4:
+        sphere = Sphere(sphere_smoothness,sphere_color, -1 ,audio_state);
+        break;
+    case 5:
+        sphere = Sphere(sphere_smoothness,sphere_color, audio_state , 1);
+        break;
+    case 6:
+        sphere = Sphere(sphere_smoothness,sphere_color, audio_state , 0);
+        break;
+    case 7:
+        sphere = Sphere(sphere_smoothness,sphere_color, audio_state , -1);
+        break;
+    case 8:
+        sphere = Sphere(sphere_smoothness,sphere_color, 0 , -1+2*audio_state);
+        break;
+}
 
 
 glGenVertexArrays(1, &VAO);
