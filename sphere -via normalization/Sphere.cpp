@@ -143,7 +143,6 @@ class Sphere{
 	
 	glm::vec3 getNormal(glm::vec3 vertex1, glm::vec3 vertex2, glm::vec3 vertex3){
 	glm::vec3 normal = glm::cross(vertex1 - vertex2, vertex1 - vertex3);
-	
 	normal.x *= -1;
 	normal.y *= -1;
 	normal.z *= -1;

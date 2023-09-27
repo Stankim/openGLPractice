@@ -10,7 +10,7 @@ using namespace std;
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
-bool record = true;
+bool record =true;
 
 int framerate = 60;
 
@@ -18,9 +18,9 @@ bool controls = true;
 
 int sphere_type = 1;
 
-const unsigned int sphere_smoothness = 3;
+const unsigned int sphere_smoothness = 4;
 
-glm::vec3 sphere_color = glm::vec3(0.1f, 0.45f, 0.7f);
+glm::vec3 sphere_color = glm::vec3(0.2f, 0.5f, 0.3f);
 glm::vec3 lightPos = glm::vec3(1.0f, 3.0f, 2.0f);
 glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
@@ -29,8 +29,11 @@ double clearColorGreen = 0.3f;
 double clearColorBlue = 0.3f;
 double clearColorGamma = 1.0f;
 
-float speed_of_rotation = 0.2;
+float speed_of_rotation = 0.5;
 glm::vec3 axis_of_rotation(0.0f, 1.0f, 0.0f);
+
+float speed_of_revolution = 0.0;
+glm::vec3 axis_of_revolution(0.0f, 0.0f, 1.0f);
 
 glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -111,7 +114,7 @@ glEnable(GL_DEPTH_TEST);
 
 // start ffmpeg telling it to expect raw rgba 720p-60hz frames
 // -i - tells it to read frames from stdin
-string cmd = "ffmpeg -r " 
+string cmd = "ffmpeg  -r " 
 + to_string(framerate) 
 + " -f rawvideo -pix_fmt rgba -s " 
 + to_string(SCR_WIDTH) + "x" 
@@ -135,7 +138,6 @@ for(int audio_index=0;!glfwWindowShouldClose(window) && audio_index<audio_reader
 
 float audio_state = (float)audio_reader.data[audio_index];
 audio_state = 1 - (audio_state/32768);
-        
 Sphere sphere = Sphere(sphere_smoothness,sphere_color,audio_state);
 switch(sphere_type){
     case 1:
@@ -201,10 +203,13 @@ glm::mat4 projection;
 projection = glm::perspective(glm::radians(field_of_view), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f); 
 
 glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition+cameraFront, cameraUp);
+//view[0][0] = (float)SCR_HEIGHT/ (float)SCR_WIDTH;
+
+//cout<<view[0][0]<<endl;
 
 glm::mat4 model = glm::mat4(1.0f);
 model = glm::rotate(model, speed_of_rotation *(float)glfwGetTime(), axis_of_rotation);
-
+model = glm::rotate(model,speed_of_revolution*(float)glfwGetTime(), axis_of_revolution);
 sphereShader.use();
 
 sphereShader.setMat4("model", model);
