@@ -14,7 +14,7 @@ bool record =true;
 
 int framerate = 60;
 
-bool controls = true;
+bool controls = false;
 
 int sphere_type = 1;
 
@@ -54,7 +54,12 @@ void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-
+void convertToMp4FileExtension(string* audio_file){
+    int length = audio_file[0].length();
+    audio_file[0][length-1] = '4';
+    audio_file[0][length-2] = 'p';
+    audio_file[0][length-3] = 'm';
+}
 
 int main(int argc, char**argv)
 {
@@ -81,6 +86,7 @@ int main(int argc, char**argv)
         return 0;
     }
     fclose(f);
+
 
 glfwInit();
 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -111,16 +117,17 @@ return -1;
 }
 glEnable(GL_DEPTH_TEST);
 
+string mp4_file_name = audio_file;
 
+convertToMp4FileExtension(&mp4_file_name);
 // start ffmpeg telling it to expect raw rgba 720p-60hz frames
 // -i - tells it to read frames from stdin
 string cmd = "ffmpeg  -r " 
 + to_string(framerate) 
 + " -f rawvideo -pix_fmt rgba -s " 
-+ to_string(SCR_WIDTH) + "x" 
-+ to_string(SCR_HEIGHT) 
-+ " -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
-
++ to_string(SCR_WIDTH) + "x" + to_string(SCR_HEIGHT) 
++ " -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip \""
++ "T_" + mp4_file_name + "\"";
 
 // open pipe to ffmpeg's stdin in binary write mode
 FILE* ffmpeg = record? popen(cmd.c_str(), "w"):NULL;
@@ -238,6 +245,17 @@ glDeleteBuffers(1, &VBO);
 glDeleteProgram(sphereShader.ID);
 
 glfwTerminate();
+
+
+string combine_audio_with_video = "ffmpeg -i \"T_"
+ + mp4_file_name + "\" -i "
++ "\"" + audio_file + "\""
++ " -c:v copy -c:a aac "
++ "\"" + mp4_file_name + "\"";
+
+std::cout<<combine_audio_with_video<<std::endl;
+system(combine_audio_with_video.c_str());
+
 return 0;
 }
 
