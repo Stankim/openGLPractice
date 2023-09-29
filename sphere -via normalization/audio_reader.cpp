@@ -60,16 +60,16 @@ class AudioReader{
         wav.read((char*)&whr.subchunk2Size,sizeof(whr.subchunk2Size));
         sampleRateForAllChannels = whr.numChannels*whr.sampleRate;
         framecount = whr.subchunk2Size * 8 /whr.bitsPerSample;
-        cout<<"format "<< whr.format<<endl;
+        /*cout<<"format "<< whr.format<<endl;
         cout << "sampleRate : " << whr.sampleRate<<endl;
         cout << "byteRate" << whr.byteRate<<endl;
         cout<< "subchunk2size " << whr.subchunk2Size << endl;
         cout<<"framecount "<<framecount<<endl;
         cout << "channels "<< whr.numChannels<<endl;
         cout << "bitsPerSample "<< whr.bitsPerSample<<endl;
-
+*/
         framecount = (this->Get_Size(file_path) -44) * 8 /whr.bitsPerSample;
-        cout <<"framecount "<< framecount<<endl;
+        //cout <<"framecount "<< framecount<<endl;
         vector<int16_t> data(framecount);
         for(int i = 0; i < framecount; i++){
             wav.read((char*)&data[i],sizeof(data[i]));

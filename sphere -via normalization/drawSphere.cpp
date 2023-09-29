@@ -10,15 +10,15 @@ using namespace std;
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
+unsigned int sphere_smoothness = 4;
+
+int sphere_type = 1;
+
 bool record =true;
 
 int framerate = 60;
 
 bool controls = false;
-
-int sphere_type = 1;
-
-const unsigned int sphere_smoothness = 4;
 
 glm::vec3 sphere_color = glm::vec3(0.2f, 0.5f, 0.3f);
 glm::vec3 lightPos = glm::vec3(1.0f, 3.0f, 2.0f);
@@ -61,6 +61,38 @@ void convertToMp4FileExtension(string* audio_file){
     audio_file[0][length-3] = 'm';
 }
 
+void printUsage(){
+    std::cout << "USAGE:"<< std::endl;
+    std::cout << "spheretalk x.wav -option1 data -option2 data -option3 data"<<std::endl;
+    std::cout << "Options:"<<std::endl;
+    std::cout << "-smoothness {int} e.g. spheretalk -smoothness 4 \n\tNB: recommended values 0 - 4"<<std::endl;
+    std::cout << "-model {1-8} e.g. spheretalk -model 2"<<std::endl;
+    std::cout << "-clearColor {0.0,0.0,0.0,0.0} e.g. spheretalk -clearColor 0.7,1.0,0.4,1.0  \n\tNB:The numbers must be between 0 and 1."<<std::endl;
+    std::cout << "-sphereColor {0.0,0.0,0.0,0.0} e.g spheretalk -sphereColor 0.3,0.6,0.5,1.0  \n\tNB:The numbers must be between 0 and 1."<<std::endl;
+    std::cout << "-speedOfRotation {float} e.g. spheretalk -speedOfRotation 0.3"<<std::endl;
+    std::cout << "-controls {true|false} e.g. spheretalk -controls true"<<std::endl;
+    std::cout << "-record {true|false} e.g. spheretalk -record true"<<std::endl;
+    std::cout << "-framerate {int} e.g. spheretalk -framerate 60 \n\tNB:Video frames per second: Recommended 60."<<std::endl;
+}
+ glm::vec4 splitVec4Input(char * arg){
+    glm::vec4 input;
+    int length = strlen(arg);
+    string number;
+    int j=0;
+    for(int i=0;i<length;i++){
+        if(j>=4){
+            std::cout<< "Error: Invalid input. Only 4 values required here: "<< arg <<std::endl;
+            //system.exit();
+        }
+        if(arg[i]==',' || i==length-1){
+            input[j] = atof(number.c_str());
+            j++;
+        }
+        number.push_back(arg[i]);
+    }
+    return input;
+ }
+
 int main(int argc, char**argv)
 {
 
@@ -86,6 +118,65 @@ int main(int argc, char**argv)
         return 0;
     }
     fclose(f);
+
+
+for(int i = 2; i<argc;i+=2){
+    if(argv[i][0] != '-'){
+        cout<< "Error: No match for " << argv[i] << ". Try the available options."<<std::endl;
+        printUsage();
+        return 0;
+    }
+    if(i==argc-1){
+        cout << "Error: No data passed in for option " << argv[i] << std::endl;
+        printUsage();
+        return 0;
+    }
+    if(strcmp(argv[i], "-smoothness")==0){
+        sphere_smoothness = atoi(argv[i+1]);
+    }
+    if(strcmp(argv[i], "-model")==0)
+    {
+        sphere_type = atoi(argv[i+1]);
+        if(sphere_type<1 || sphere_type>8){
+            std::cout<< "Error: The option -model can only accept a value between 1 and 8."<<std::endl;
+            return 0;
+        }
+    }
+    if(strcmp(argv[i], "-clearColor")==0){
+        glm::vec4 input = splitVec4Input(argv[i+1]);
+        clearColorRed = input.x;
+        clearColorGreen = input.y;
+        clearColorBlue = input.z;
+        clearColorGamma = input.w;
+    }
+    if(strcmp(argv[i], "-sphereColor")==0){
+        sphere_color = splitVec4Input(argv[i+1]);
+    }
+    if(strcmp(argv[i], "-speedOfRotation")==0){
+        speed_of_rotation = atof(argv[i+1]);
+    }
+    if(strcmp(argv[i], "-controls")==0){
+        if(strcmp(argv[i+1], "true")==0){
+            controls = true;
+        }
+        else if(strcmp(argv[i+1], "false")==0){
+            controls = false;
+        }
+    }
+    if(strcmp(argv[i], "-record")==0){
+        if(strcmp(argv[i+1], "true")==0){
+            record = true;
+        }
+        else if(strcmp(argv[i+1], "false")==0){
+            record = false;
+        }
+    }
+    if(strcmp(argv[i], "-framerate")==0){
+        framerate = atoi(argv[i+1]);
+    }
+}
+
+
 
 
 glfwInit();
@@ -116,6 +207,8 @@ std::cout << "Failed to initialize GLAD" << std::endl;
 return -1;
 }
 glEnable(GL_DEPTH_TEST);
+
+
 
 string mp4_file_name = audio_file;
 
@@ -246,16 +339,15 @@ glDeleteProgram(sphereShader.ID);
 
 glfwTerminate();
 
+if(record){
+    string combine_audio_with_video = "ffmpeg -i \"T_"
+     + mp4_file_name + "\" -i "
+    + "\"" + audio_file + "\""
+    + " -c:v copy -c:a aac "
+    + "\"" + mp4_file_name + "\"";
 
-string combine_audio_with_video = "ffmpeg -i \"T_"
- + mp4_file_name + "\" -i "
-+ "\"" + audio_file + "\""
-+ " -c:v copy -c:a aac "
-+ "\"" + mp4_file_name + "\"";
-
-std::cout<<combine_audio_with_video<<std::endl;
-system(combine_audio_with_video.c_str());
-
+    system(combine_audio_with_video.c_str());
+}
 return 0;
 }
 
